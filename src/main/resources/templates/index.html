@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+<meta charset="UTF-8"><title>Ambiensa S.A. - Persistencia JPA</title>
+<style>
+ body{font-family:Calibri,Arial,sans-serif;margin:24px;color:#222;background:#f6f7f9}
+ h1{margin-bottom:0} h2{margin:22px 0 6px;font-size:18px;color:#1d4e89}
+ code{display:block;background:#eef1f5;padding:6px 8px;font-size:12px;margin-bottom:6px}
+ table{border-collapse:collapse;background:#fff;margin-bottom:6px} th,td{border:1px solid #ccd;padding:4px 10px;font-size:13px}
+ th{background:#1d4e89;color:#fff} form{margin:4px 0} .ok{color:#116611;font-weight:bold}
+</style></head>
+<body>
+<h1>Ambiensa S.A.</h1><div>Demostracion de Jakarta Persistence (JPA/Hibernate + SQLite)</div>
+
+<h2>1. SELECT con parametros nombrados</h2>
+<code>SELECT v FROM Villa v WHERE v.proyecto.nombre = :proyecto AND v.precio &lt;= :max ORDER BY v.precio</code>
+<form method="get" action="/">Proyecto: <input name="proyecto" th:value="${proyecto}"> Precio maximo: <input name="max" th:value="${max}"> <button>Buscar</button></form>
+<table><tr><th>Codigo</th><th>Estado</th><th>Precio (USD)</th></tr>
+<tr th:each="v : ${c1}"><td th:text="${v.codigo}"></td><td th:text="${v.estado}"></td><td th:text="${#numbers.formatDecimal(v.precio,1,'COMMA',2,'POINT')}"></td></tr></table>
+
+<h2>2. JOIN FETCH (villas disponibles con tipo, proyecto y servicios)</h2>
+<code>SELECT DISTINCT v FROM Villa v JOIN FETCH v.tipo JOIN FETCH v.proyecto LEFT JOIN FETCH v.servicios WHERE v.estado = 'DISPONIBLE'</code>
+<table><tr><th>Codigo</th><th>Proyecto</th><th>Tipo</th><th>Servicios</th></tr>
+<tr th:each="v : ${c2}"><td th:text="${v.codigo}"></td><td th:text="${v.proyecto.nombre}"></td><td th:text="${v.tipo.nombre}"></td>
+<td><span th:each="s,i : ${v.servicios}" th:text="${s.nombre + (i.last ? '' : ', ')}"></span></td></tr></table>
+
+<h2>3. UPDATE masivo (reajuste de precios)</h2>
+<code>UPDATE Villa v SET v.precio = v.precio * :factor WHERE v.proyecto.id = :proyectoId AND v.estado = 'DISPONIBLE'</code>
+<form method="post" action="/reajustar">Proyecto id: <input name="proyectoId" value="1" size="3"> Porcentaje: <input name="porcentaje" value="5" size="3">% <button>Aplicar</button></form>
+<div class="ok" th:if="${reajuste != null}" th:text="'Filas actualizadas: ' + ${reajuste}"></div>
+
+<h2>4. JOIN FETCH de reservas</h2>
+<code>SELECT r FROM Reserva r JOIN FETCH r.villa JOIN FETCH r.cliente JOIN FETCH r.vendedor ORDER BY r.fecha</code>
+<table><tr><th>Fecha</th><th>Villa</th><th>Cliente</th><th>Vendedor</th><th>Monto</th></tr>
+<tr th:each="r : ${c4}"><td th:text="${r.fecha}"></td><td th:text="${r.villa.codigo}"></td><td th:text="${r.cliente.nombre}"></td><td th:text="${r.vendedor.nombre}"></td><td th:text="${r.monto}"></td></tr></table>
+
+<h2>5. Agregacion GROUP BY</h2>
+<code>SELECT r.vendedor.nombre, COUNT(r), SUM(r.monto) FROM Reserva r GROUP BY r.vendedor.nombre</code>
+<table><tr><th>Vendedor</th><th>Reservas</th><th>Total</th></tr>
+<tr th:each="f : ${c5}"><td th:text="${f[0]}"></td><td th:text="${f[1]}"></td><td th:text="${f[2]}"></td></tr></table>
+
+<h2>6. Ciclo de vida de una entidad</h2>
+<table><tr><th>Paso</th></tr><tr th:each="l : ${ciclo}"><td th:text="${l}"></td></tr></table>
+</body></html>
